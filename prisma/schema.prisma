@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+
+}
+
+model User {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  email     String   @unique
+  imageUrl  String
+  password  String
+  walletId  String   @unique
+  faucetId  String   @unique
+  wallet    Wallet   @relation(fields: [walletId], references: [id])
+  faucet    Faucet   @relation(fields: [faucetId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Wallet {
+  id         String   @id @default(cuid())
+  address    String?
+  usdBalance Float    @default(1200)
+  rewardsId  String   @unique
+  rewards    Rewards  @relation(fields: [rewardsId], references: [id])
+  user       User?
+}
+
+model Rewards {
+  id          String   @id @default(cuid())
+  amount      Float    @default(0)
+  lastUpdated DateTime @default(now())
+  wallet      Wallet?
+}
+
+model Faucet {
+  id            String    @id @default(cuid())
+  amount        Float     @default(0)
+  lastRequested DateTime?
+  user          User?
+}
