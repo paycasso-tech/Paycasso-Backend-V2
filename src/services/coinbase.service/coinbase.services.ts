@@ -21,9 +21,17 @@ const createWalletForUser = async (user: { id: string; walletId: string }) => {
 
     const defaultAddressId = (await wallet.getDefaultAddress()).getId();
 
+    // If Prisma schema doesn't yet include 'coinbaseWalletId', cast the payload to `any` to avoid
+    // TS errors. Best long-term fix: add `coinbaseWalletId String?` to your Prisma Wallet model and run
+    // `npx prisma migrate dev` + `npx prisma generate`.
+    const walletUpdateData: any = {
+        address: defaultAddressId,
+        coinbaseWalletId: wallet.getId() as string,
+    };
+
     await prisma.wallet.update({
         where: { id: user.walletId },
-        data: { address: defaultAddressId },
+        data: walletUpdateData,
     });
 
     return await prisma.user.findUnique({

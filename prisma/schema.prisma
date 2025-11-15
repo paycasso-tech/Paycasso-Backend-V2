@@ -34,6 +34,7 @@ model Wallet {
   id         String   @id @default(cuid())
   address    String?
   usdBalance Float    @default(1200)
+  coinbaseWalletId String? @unique
   rewardsId  String   @unique
   rewards    Rewards  @relation(fields: [rewardsId], references: [id])
   user       User?

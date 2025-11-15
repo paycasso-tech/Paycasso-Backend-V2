@@ -3,7 +3,8 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "backfill:coinbase:wallet-ids": "tsx scripts/backfillCoinbaseWalletIds.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
