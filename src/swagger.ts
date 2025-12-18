@@ -10,8 +10,8 @@ const options: swaggerJsdoc.Options = {
       description: "API documentation for Paycasso backend",
     },
     servers: [
-      { url: "http://localhost:3000", description: "Local server" }
-      // add other servers if needed
+      { url: "http://localhost:3000", description: "Local server" } 
+     
     ],
     components: {
       securitySchemes: {
@@ -22,19 +22,19 @@ const options: swaggerJsdoc.Options = {
         }
       },
       schemas: {
-        // You can put commonly used schemas here (or create them in JSDoc).
+        // You can put commonly used schemas here 
       }
     },
     security: [
-      // default security for all endpoints (optional)
+      
       { BearerAuth: [] }
     ]
   },
-  // Point swagger-jsdoc at your files containing JSDoc comments for paths/schemas:
+  
   apis: [
     "./src/controllers/*.ts",
     "./src/routes/*.ts",
-    "./src/**/*.ts" // add globs as needed
+    "./src/**/*.ts" // Adjust the path as necessary
   ]
 };
 
