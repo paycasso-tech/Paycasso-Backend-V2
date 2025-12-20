@@ -1,4 +1,12 @@
+import { Router } from "express";
 import userRoutes from "./user.routes";
-import tranferRoutes from "./tranfers.routes";
+import transferRoutes from "./tranfers.routes"; 
+import disputeRoutes from "./dispute.routes";
 
-export { userRoutes, tranferRoutes };
+const router = Router();
+
+router.use("/user", userRoutes);
+router.use("/transfer", transferRoutes);
+router.use("/dispute", disputeRoutes);
+
+export { router as userRoutes, transferRoutes, disputeRoutes };
