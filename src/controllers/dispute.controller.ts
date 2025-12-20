@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { PrismaClient } from "../../generated/prisma/client";
 import { DisputeService } from "../services/dispute.service";
 

@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { userRoutes, tranferRoutes } from "./routes";
+import { userRoutes, transferRoutes } from "./routes";
 import { DisputeService } from "./services/dispute.service";
 import { setupFaucet } from "./services/coinbase.service/coinbase.services";
 dotenv.config();
@@ -25,7 +25,7 @@ const initServices = async () => {
 
 initServices();
 app.use("/api/user", userRoutes);
-app.use("/api/transfer", tranferRoutes);
+app.use("/api/transfer", transferRoutes);
 
 app.listen(PORT,()=>{
     console.log(`Server is running on port ${PORT}`);

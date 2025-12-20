@@ -71,11 +71,11 @@ export class DisputeService {
       // Logic for AI analysis here
       const verdict = { percent: 60, reason: "Merged Backend AI Result" };
 
-      const tx = await this.disputeContract.submitAIVerdict(
-        jobId,
-        verdict.percent,
-        verdict.reason
-      );
+     const tx = await this.disputeContract.submitAIVerdict!(
+       jobId,
+       verdict.percent,
+       verdict.reason
+     );
       await tx.wait();
 
       await prisma.job.update({
