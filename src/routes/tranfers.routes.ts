@@ -16,9 +16,26 @@ const router = Router();
  * /api/transfer/getTransfers:
  *   get:
  *     summary: Get all transfers for the logged-in user
+ *     description: >
+ *       Requires Authorization token and user email.
+ *       Email must be provided either via `x-user-email` header
+ *       or `email` query parameter.
  *     tags: [Transfer]
  *     security:
  *       - BearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: x-user-email
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: name@example.com
+ *       - in: query
+ *         name: email
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: name@example.com
  *     responses:
  *       200:
  *         description: List of transfers
@@ -29,10 +46,11 @@ const router = Router();
  *               items:
  *                 $ref: '#/components/schemas/Transfer'
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized (missing token or email)
  *       500:
  *         description: Internal Server Error
  */
+
 
 /**
  * @openapi

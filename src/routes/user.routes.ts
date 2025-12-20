@@ -24,12 +24,6 @@ const router = Router();
  *       - BearerAuth: []
  *     parameters:
  *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
- *           example: Bearer eyJhbGciOi...
- *       - in: header
  *         name: x-user-email
  *         required: false
  *         schema:
@@ -78,6 +72,7 @@ const router = Router();
  *       500:
  *         description: Internal Server Error
  */
+
 
 /**
  * @openapi
