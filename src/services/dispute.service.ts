@@ -169,7 +169,7 @@ export class DisputeService {
   }
 
   public startListeners() {
-    console.log("🛰️ TFA Dispute Listeners Active");
+    console.log(" TFA Dispute Listeners Active");
 
     // Sync Job Creation
     this.disputeContract.on(
