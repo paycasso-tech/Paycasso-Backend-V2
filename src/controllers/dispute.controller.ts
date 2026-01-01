@@ -22,6 +22,7 @@ export const getJobDetails = async (req: Request, res: Response) => {
 
 export const addEvidence = async (req: Request, res: Response) => {
   const { jobId } = req.params;
+  if (!jobId) return res.status(400).json({ error: "Job ID is required" });
   const { sender, message, fileUrl } = req.body;
 
   try {
@@ -41,14 +42,102 @@ export const addEvidence = async (req: Request, res: Response) => {
 
 export const escalateToDAO = async (req: Request, res: Response) => {
   const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "ID is required" });
   const { durationSeconds } = req.body;
 
   try {
-    // Calls the new 2-argument startVoting function
-    const txHash = disputeService.escalateToDAO(
-        parseInt(id),
-        durationSeconds
+    const txHash = await disputeService.escalateToDAO(
+      parseInt(id),
+      durationSeconds
     );
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const checkDeadline = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "ID is required" });
+  try {
+    const txHash = await disputeService.checkAIDeadline(parseInt(id));
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const finalizeVote = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "ID is required" });
+  try {
+    const txHash = await disputeService.finalizeVoting(parseInt(id));
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const registerVoter = async (req: Request, res: Response) => {
+  const { voterAddress } = req.body;
+  if (!voterAddress) return res.status(400).json({ error: "voterAddress is required" });
+  try {
+    const txHash = await disputeService.registerVoter(voterAddress);
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const removeVoter = async (req: Request, res: Response) => {
+  const { voterAddress } = req.body;
+  if (!voterAddress) return res.status(400).json({ error: "voterAddress is required" });
+  try {
+    const txHash = await disputeService.removeVoter(voterAddress);
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const banVoter = async (req: Request, res: Response) => {
+  const { voterAddress } = req.body;
+  if (!voterAddress) return res.status(400).json({ error: "voterAddress is required" });
+  try {
+    const txHash = await disputeService.banVoter(voterAddress);
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const setVotingDuration = async (req: Request, res: Response) => {
+  const { duration } = req.body;
+  if (!duration) return res.status(400).json({ error: "duration is required" });
+  try {
+    const txHash = await disputeService.setVotingDuration(parseInt(duration));
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const setMinVoters = async (req: Request, res: Response) => {
+  const { count } = req.body;
+  if (!count) return res.status(400).json({ error: "count is required" });
+  try {
+    const txHash = await disputeService.setMinVotersRequired(parseInt(count));
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const setFeePercentage = async (req: Request, res: Response) => {
+  const { fee } = req.body;
+  if (fee === undefined) return res.status(400).json({ error: "fee is required" });
+  try {
+    const txHash = await disputeService.setFeePercentage(parseInt(fee));
     res.json({ success: true, txHash });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
