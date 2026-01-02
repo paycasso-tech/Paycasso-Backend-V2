@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { PrismaClient } from "../../generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import DisputeArtifact from "../abis/TFADispute.json";
 import DAOVotingArtifact from "../abis/TFADAOVoting.json";
 
@@ -12,14 +12,16 @@ export class DisputeService {
    */
   async escalateToDAO(jobId: number, durationSeconds: number = 86400) {
     try {
-      console.log(`escalating job ${jobId} to DAO with duration ${durationSeconds}`);
-      
+      console.log(
+        `escalating job ${jobId} to DAO with duration ${durationSeconds}`
+      );
+
       const tx = await this.daoContract.startVoting!(jobId, durationSeconds);
       console.log("Transaction sent:", tx.hash);
-      
+
       await tx.wait();
       console.log("Voting started successfully");
-      
+
       return tx.hash;
     } catch (error) {
       console.error("Failed to escalate to DAO:", error);
@@ -225,20 +227,27 @@ export class DisputeService {
     // --- DAO Voting Listeners ---
 
     this.daoContract.on("VotingSessionStarted", async (jobId, endTime) => {
-      console.log(`Voting session started for job ${jobId}, ends at ${endTime}`);
+      console.log(
+        `Voting session started for job ${jobId}, ends at ${endTime}`
+      );
       await prisma.job.update({
         where: { jobId: Number(jobId) },
         data: { status: "DisputeRaised" }, // Ensure this status exists in enum/schema
       });
     });
 
-    this.daoContract.on("VotingFinalized", async (jobId, consensusPercent, mad) => {
-      console.log(`Voting finalized for job ${jobId}. Consensus: ${consensusPercent}%`);
-      await prisma.job.update({
-        where: { jobId: Number(jobId) },
-        data: { status: "Resolved" },
-      });
-    });
+    this.daoContract.on(
+      "VotingFinalized",
+      async (jobId, consensusPercent, mad) => {
+        console.log(
+          `Voting finalized for job ${jobId}. Consensus: ${consensusPercent}%`
+        );
+        await prisma.job.update({
+          where: { jobId: Number(jobId) },
+          data: { status: "Resolved" },
+        });
+      }
+    );
   }
 
   private async processAIDispute(jobId: number) {
@@ -246,11 +255,11 @@ export class DisputeService {
       // Logic for AI analysis here
       const verdict = { percent: 60, reason: "Merged Backend AI Result" };
 
-     const tx = await this.disputeContract.submitAIVerdict!(
-       jobId,
-       verdict.percent,
-       verdict.reason
-     );
+      const tx = await this.disputeContract.submitAIVerdict!(
+        jobId,
+        verdict.percent,
+        verdict.reason
+      );
       await tx.wait();
 
       await prisma.job.update({

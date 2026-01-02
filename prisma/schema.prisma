@@ -1,43 +1,83 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-
 }
 
 model User {
+  id         String    @id @default(cuid())
+  userId     String    @unique
+  name       String
+  email      String    @unique
+  imageUrl   String    @default("")
+  walletId   String    @unique
+  faucetId   String    @unique
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  password   String
+  bio        String    @default("")
+  isActive   Boolean   @default(true)
+  isVerified Boolean   @default(false)
+  role       UserRole  @default(USER)
+  username   String    @unique
+  sessions   Session[]
+  faucet     Faucet    @relation(fields: [faucetId], references: [id], onDelete: Cascade)
+  wallet     Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([username])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model EmailVerification {
   id        String   @id @default(cuid())
-  userId    String
-  name      String
-  email     String   @unique
-  imageUrl  String
-  password  String
-  walletId  String   @unique
-  faucetId  String   @unique
-  wallet    Wallet   @relation(fields: [walletId], references: [id])
-  faucet    Faucet   @relation(fields: [faucetId], references: [id])
+  email     String
+  token     String   @unique
+  expiresAt DateTime
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([token])
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
 }
 
 model Wallet {
-  id         String   @id @default(cuid())
-  address    String?
-  usdBalance Float    @default(1200)
+  id               String  @id @default(cuid())
+  address          String?
+  usdBalance       Float   @default(1200)
+  rewardsId        String  @unique
   coinbaseWalletId String? @unique
-  rewardsId  String   @unique
-  rewards    Rewards  @relation(fields: [rewardsId], references: [id])
-  user       User?
+  user             User?
+  rewards          Rewards @relation(fields: [rewardsId], references: [id], onDelete: Cascade)
+
+  @@index([address])
+  @@index([coinbaseWalletId])
 }
 
 model Rewards {
@@ -54,42 +94,51 @@ model Faucet {
   user          User?
 }
 
+model Job {
+  id                  String     @id @default(cuid())
+  jobId               Int        @unique
+  clientAddress       String
+  contractorAddress   String
+  amountUSDC          Float
+  status              JobStatus  @default(Active)
+  aiContractorPercent Int?
+  aiExplanation       String?
+  aiDeadline          DateTime?
+  daoEndTime          DateTime?
+  daoConsensusPercent Int?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  evidence            Evidence[]
+
+  @@index([clientAddress])
+  @@index([contractorAddress])
+  @@index([status])
+}
+
+model Evidence {
+  id        String   @id @default(cuid())
+  jobId     String
+  sender    String
+  message   String
+  fileUrl   String?
+  timestamp DateTime @default(now())
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
 enum JobStatus {
   Active
   DisputeRaised
   AIResolved
   DAOEscalated
   Resolved
-}
-
-model Job {
-  id                 String     @id @default(cuid())
-  jobId              Int        @unique // The On-chain ID
-  clientAddress      String
-  contractorAddress  String
-  amountUSDC         Float
-  status             JobStatus  @default(Active)
-  evidence           Evidence[]
-  
-  // AI Verdict Data
-  aiContractorPercent Int?
-  aiExplanation      String?
-  aiDeadline         DateTime?
-  
-  // DAO Session Data
-  daoEndTime         DateTime?
-  daoConsensusPercent Int?
-  
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
-}
-
-model Evidence {
-  id        String   @id @default(cuid())
-  jobId     String
-  job       Job      @relation(fields: [jobId], references: [id])
-  sender    String
-  message   String
-  fileUrl   String?
-  timestamp DateTime @default(now())
+  Completed
+  Cancelled
 }

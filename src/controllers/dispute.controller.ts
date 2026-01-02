@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { PrismaClient } from "../../generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { DisputeService } from "../services/dispute.service";
 
 const prisma = new PrismaClient();
@@ -80,7 +80,8 @@ export const finalizeVote = async (req: Request, res: Response) => {
 
 export const registerVoter = async (req: Request, res: Response) => {
   const { voterAddress } = req.body;
-  if (!voterAddress) return res.status(400).json({ error: "voterAddress is required" });
+  if (!voterAddress)
+    return res.status(400).json({ error: "voterAddress is required" });
   try {
     const txHash = await disputeService.registerVoter(voterAddress);
     res.json({ success: true, txHash });
@@ -91,7 +92,8 @@ export const registerVoter = async (req: Request, res: Response) => {
 
 export const removeVoter = async (req: Request, res: Response) => {
   const { voterAddress } = req.body;
-  if (!voterAddress) return res.status(400).json({ error: "voterAddress is required" });
+  if (!voterAddress)
+    return res.status(400).json({ error: "voterAddress is required" });
   try {
     const txHash = await disputeService.removeVoter(voterAddress);
     res.json({ success: true, txHash });
@@ -102,7 +104,8 @@ export const removeVoter = async (req: Request, res: Response) => {
 
 export const banVoter = async (req: Request, res: Response) => {
   const { voterAddress } = req.body;
-  if (!voterAddress) return res.status(400).json({ error: "voterAddress is required" });
+  if (!voterAddress)
+    return res.status(400).json({ error: "voterAddress is required" });
   try {
     const txHash = await disputeService.banVoter(voterAddress);
     res.json({ success: true, txHash });
@@ -135,7 +138,8 @@ export const setMinVoters = async (req: Request, res: Response) => {
 
 export const setFeePercentage = async (req: Request, res: Response) => {
   const { fee } = req.body;
-  if (fee === undefined) return res.status(400).json({ error: "fee is required" });
+  if (fee === undefined)
+    return res.status(400).json({ error: "fee is required" });
   try {
     const txHash = await disputeService.setFeePercentage(parseInt(fee));
     res.json({ success: true, txHash });
