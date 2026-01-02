@@ -1,9 +1,9 @@
 import { ethers } from "ethers";
-import { PrismaClient } from "../../generated/prisma/client";
+// PrismaClient import removed
 import DisputeArtifact from "../abis/TFADispute.json";
 import DAOVotingArtifact from "../abis/TFADAOVoting.json";
 
-const prisma = new PrismaClient();
+import { prisma } from "../db";
 
 export class DisputeService {
   /**

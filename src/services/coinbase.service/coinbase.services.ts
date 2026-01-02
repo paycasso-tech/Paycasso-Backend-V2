@@ -1,5 +1,5 @@
 import { Coinbase, Wallet } from "@coinbase/coinbase-sdk";
-import { PrismaClient } from "../../../generated/prisma/client";
+// PrismaClient import removed
 import { getWalletIdFromPath, storeWalletIdToPath } from "../../utils/lib/coinbase/index";
 import fs from "fs";
 import path from 'path';
@@ -12,7 +12,7 @@ const cb = Coinbase.configureFromJson({
     useServerSigner: true 
 });
 
-const prisma = new PrismaClient();
+import { prisma } from "../../db";
 
 const createWalletForUser = async (user: { id: string; walletId: string }) => {
     const wallet = await Wallet.create({

@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
-import { PrismaClient } from "../../generated/prisma/client";
+// PrismaClient import removed
 import { Coinbase, Wallet, Transfer } from "@coinbase/coinbase-sdk";
 import path from 'path';
 
-const prisma = new PrismaClient();
+import { prisma } from "../db";
 
 // Use absolute path for the API key file
 const apiKeyPath = path.join(process.cwd(), 'src/services/coinbase.service/cdp_api_key.json');

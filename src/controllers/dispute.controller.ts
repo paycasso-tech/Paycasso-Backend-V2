@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
-import { PrismaClient } from "../../generated/prisma/client";
+// PrismaClient import removed
 import { DisputeService } from "../services/dispute.service";
 
-const prisma = new PrismaClient();
+import { prisma } from "../db";
 const disputeService = new DisputeService();
 
 export const getJobDetails = async (req: Request, res: Response) => {

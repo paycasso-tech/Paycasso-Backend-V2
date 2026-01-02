@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
-import { PrismaClient } from "../../generated/prisma/client";
+// PrismaClient import removed
 import { Coinbase, ExternalAddress } from "@coinbase/coinbase-sdk";
 import { cb as coinbase, createWalletForUser, fundWallet } from "../services/coinbase.service/coinbase.services";
 import { faucetConfig } from "../utils/lib/faucet";
 import bcrypt from "bcrypt";
 import { randomBytes } from "node:crypto";
 
-const prisma = new PrismaClient();
+import { prisma } from "../db";
 
 export const getUserWallet = async (req: Request, res: Response) => {
     try {
