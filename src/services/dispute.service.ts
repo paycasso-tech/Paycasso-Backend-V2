@@ -143,38 +143,51 @@ export class DisputeService {
       throw error;
     }
   }
-  private provider: ethers.WebSocketProvider;
-  private aiWallet: ethers.Wallet;
-  private disputeContract: ethers.Contract;
-  private daoContract: ethers.Contract;
+    private disputeContract: ethers.Contract;
+    private daoContract: ethers.Contract;
+    
+    // Admin-privileged contract instances
+    private adminDisputeContract?: ethers.Contract;
+    private adminDaoContract?: ethers.Contract;
 
-  constructor() {
-    this.provider = new ethers.WebSocketProvider(process.env.BASE_WSS_URL!);
-    this.aiWallet = new ethers.Wallet(
-      process.env.AI_WALLET_PRIVATE_KEY!,
-      this.provider
-    );
+    constructor() {
+        const provider = new ethers.WebSocketProvider(process.env.BASE_WSS_URL!);
+        
+        // 1. Setup AI Agent Wallet (Default for standard ops)
+        const aiWallet = new ethers.Wallet(process.env.AI_WALLET_PRIVATE_KEY!, provider);
+        
+        // 2. Setup Admin Wallet (Optional, for admin ops)
+        let adminWallet: ethers.Wallet | null = null;
+        if (process.env.ADMIN_WALLET_PRIVATE_KEY && !process.env.ADMIN_WALLET_PRIVATE_KEY.includes("YOUR_")) {
+            try {
+                adminWallet = new ethers.Wallet(process.env.ADMIN_WALLET_PRIVATE_KEY, provider);
+            } catch (e) {
+                console.warn("⚠️  Invalid ADMIN_WALLET_PRIVATE_KEY format.");
+            }
+        } else {
+            console.warn("⚠️  ADMIN_WALLET_PRIVATE_KEY is missing or invalid. Admin functions will fail.");
+        }
 
-    this.disputeContract = new ethers.Contract(
-      process.env.TFA_DISPUTE_ADDRESS!,
-      DisputeArtifact.abi,
-      this.aiWallet
-    );
+        // Initialize Contracts (AI Signer)
+        this.disputeContract = new ethers.Contract(process.env.TFA_DISPUTE_ADDRESS!, DisputeArtifact.abi, aiWallet);
+        this.daoContract = new ethers.Contract(process.env.TFA_DAO_VOTING_ADDRESS!, DAOVotingArtifact.abi, aiWallet);
 
-    this.daoContract = new ethers.Contract(
-      process.env.TFA_DAO_VOTING_ADDRESS!,
-      DAOVotingArtifact.abi,
-      this.aiWallet
-    );
-  }
+        // Initialize Contracts (Admin Signer) - Only if wallet exists
+        if (adminWallet) {
+            this.adminDisputeContract = new ethers.Contract(process.env.TFA_DISPUTE_ADDRESS!, DisputeArtifact.abi, adminWallet);
+            this.adminDaoContract = new ethers.Contract(process.env.TFA_DAO_VOTING_ADDRESS!, DAOVotingArtifact.abi, adminWallet);
+        }
 
-  public startListeners() {
-    console.log(" TFA Dispute Listeners Active");
+        this.initializeListeners();
+    }
+    private initializeListeners() {
+    console.log("Initializing Smart Contract Listeners...");
 
     // Sync Job Creation
     this.disputeContract.on(
       "JobCreated",
       async (id, client, contractor, amount) => {
+        console.log(`Job Created: ${id} by ${client}`);
         const amountReadable = parseFloat(ethers.formatUnits(amount, 6));
         await prisma.job.upsert({
           where: { jobId: Number(id) },
@@ -191,11 +204,13 @@ export class DisputeService {
     );
 
     // Sync Dispute Raised
-    this.disputeContract.on("DisputeRaised", async (id) => {
+    this.disputeContract.on("DisputeRaised", async (id, raisedBy) => {
+      console.log(`Dispute Raised for Job ${id} by ${raisedBy}`);
       await prisma.job.update({
         where: { jobId: Number(id) },
         data: { status: "DisputeRaised" },
       });
+      // Trigger AI Agent instantly (or queue it)
       this.processAIDispute(Number(id));
     });
 
@@ -228,7 +243,7 @@ export class DisputeService {
       console.log(`Voting session started for job ${jobId}, ends at ${endTime}`);
       await prisma.job.update({
         where: { jobId: Number(jobId) },
-        data: { status: "DisputeRaised" }, // Ensure this status exists in enum/schema
+        data: { status: "DisputeRaised" },
       });
     });
 
