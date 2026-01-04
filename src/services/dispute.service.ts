@@ -248,13 +248,15 @@ export class DisputeService {
     }
   }
 
+  
   /**
    * Register a new voter (Admin only)
    */
   async registerVoter(voterAddress: string) {
+    if (!this.adminDaoContract) throw new Error("Admin wallet not initialized");
     try {
       console.log(`Registering voter: ${voterAddress}`);
-      const tx = await this.daoContract.registerVoter!(voterAddress);
+      const tx = await this.adminDaoContract!.registerVoter!(voterAddress);
       await tx.wait();
       return tx.hash;
     } catch (error) {
@@ -267,9 +269,10 @@ export class DisputeService {
    * Remove a voter (Admin only)
    */
   async removeVoter(voterAddress: string) {
+    if (!this.adminDaoContract) throw new Error("Admin wallet not initialized");
     try {
       console.log(`Removing voter: ${voterAddress}`);
-      const tx = await this.daoContract.removeVoter!(voterAddress);
+      const tx = await this.adminDaoContract!.removeVoter!(voterAddress);
       await tx.wait();
       return tx.hash;
     } catch (error) {
@@ -281,9 +284,10 @@ export class DisputeService {
    * Ban a voter (Admin only)
    */
   async banVoter(voterAddress: string) {
+    if (!this.adminDaoContract) throw new Error("Admin wallet not initialized");
     try {
       console.log(`Banning voter: ${voterAddress}`);
-      const tx = await this.daoContract.banVoter!(voterAddress);
+      const tx = await this.adminDaoContract!.banVoter!(voterAddress);
       await tx.wait();
       return tx.hash;
     } catch (error) {
@@ -296,9 +300,10 @@ export class DisputeService {
    * Set Voting Duration (Admin only)
    */
   async setVotingDuration(duration: number) {
+    if (!this.adminDaoContract) throw new Error("Admin wallet not initialized");
     try {
       console.log(`Setting voting duration to: ${duration}`);
-      const tx = await this.daoContract.setVotingDuration!(duration);
+      const tx = await this.adminDaoContract!.setVotingDuration!(duration);
       await tx.wait();
       return tx.hash;
     } catch (error) {
@@ -311,9 +316,10 @@ export class DisputeService {
    * Set Minimum Voters Required (Admin only)
    */
   async setMinVotersRequired(count: number) {
+    if (!this.adminDaoContract) throw new Error("Admin wallet not initialized");
     try {
       console.log(`Setting min voters required to: ${count}`);
-      const tx = await this.daoContract.setMinVotersRequired!(count);
+      const tx = await this.adminDaoContract!.setMinVotersRequired!(count);
       await tx.wait();
       return tx.hash;
     } catch (error) {
@@ -326,9 +332,10 @@ export class DisputeService {
    * Set Fee Percentage (Admin only)
    */
   async setFeePercentage(fee: number) {
+    if (!this.adminDisputeContract) throw new Error("Admin wallet not initialized");
     try {
       console.log(`Setting fee percentage to: ${fee}`);
-      const tx = await this.disputeContract.setFeePercentage!(fee);
+      const tx = await this.adminDisputeContract!.setFeePercentage!(fee);
       await tx.wait();
       return tx.hash;
     } catch (error) {
@@ -355,10 +362,10 @@ export class DisputeService {
             try {
                 adminWallet = new ethers.Wallet(process.env.ADMIN_WALLET_PRIVATE_KEY, provider);
             } catch (e) {
-                console.warn("⚠️  Invalid ADMIN_WALLET_PRIVATE_KEY format.");
+                console.warn("  Invalid ADMIN_WALLET_PRIVATE_KEY format.");
             }
         } else {
-            console.warn("⚠️  ADMIN_WALLET_PRIVATE_KEY is missing or invalid. Admin functions will fail.");
+            console.warn("  ADMIN_WALLET_PRIVATE_KEY is missing or invalid. Admin functions will fail.");
         }
 
         // Initialize Contracts (AI Signer)
