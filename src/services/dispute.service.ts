@@ -200,14 +200,15 @@ export class DisputeService {
   }
 
   /**
-   * Manually start voting session (DAO Escalation)
+   * Manually start voting session (DAO Escalation) - Admin Admin Override
    * Only callable if the sender has the right role or if logic permits public calling
    */
   async escalateToDAO(jobId: number, durationSeconds: number = 86400) {
+    if (!this.adminDaoContract) throw new Error("Admin wallet not initialized");
     try {
       console.log(`escalating job ${jobId} to DAO with duration ${durationSeconds}`);
       
-      const tx = await this.daoContract.startVoting!(jobId, durationSeconds);
+      const tx = await this.adminDaoContract!.startVoting!(jobId, durationSeconds);
       console.log("Transaction sent:", tx.hash);
       
       await tx.wait();
@@ -248,7 +249,6 @@ export class DisputeService {
     }
   }
 
-  
   /**
    * Register a new voter (Admin only)
    */
@@ -387,31 +387,35 @@ export class DisputeService {
     this.disputeContract.on(
       "JobCreated",
       async (id, client, contractor, amount) => {
-        console.log(`Job Created: ${id} by ${client}`);
-        const amountReadable = parseFloat(ethers.formatUnits(amount, 6));
-        await prisma.job.upsert({
-          where: { jobId: Number(id) },
-          update: { status: "Active" },
-          create: {
-            jobId: Number(id),
-            clientAddress: client,
-            contractorAddress: contractor,
-            amountUSDC: amountReadable,
-            status: "Active",
-          },
-        });
+        try {
+          console.log(`Job Created: ${id} by ${client}`);
+          const amountReadable = parseFloat(ethers.formatUnits(amount, 6));
+          await prisma.job.upsert({
+            where: { jobId: Number(id) },
+            update: { status: "Active" },
+            create: {
+              jobId: Number(id),
+              clientAddress: client,
+              contractorAddress: contractor,
+              amountUSDC: amountReadable,
+              status: "Active",
+            },
+          });
+        } catch (e) { console.error("Error processing JobCreated:", e); }
       }
     );
 
     // Sync Dispute Raised
     this.disputeContract.on("DisputeRaised", async (id, raisedBy) => {
-      console.log(`Dispute Raised for Job ${id} by ${raisedBy}`);
-      await prisma.job.update({
-        where: { jobId: Number(id) },
-        data: { status: "DisputeRaised" },
-      });
-      // Trigger AI Agent instantly (or queue it)
-      this.processAIDispute(Number(id));
+      try {
+        console.log(`Dispute Raised for Job ${id} by ${raisedBy}`);
+        await prisma.job.update({
+          where: { jobId: Number(id) },
+          data: { status: "DisputeRaised" },
+        });
+        // Trigger AI Agent instantly (or queue it)
+        await this.processAIDispute(Number(id));
+      } catch (e) { console.error("Error processing DisputeRaised:", e); }
     });
 
     // Sync AI Verdict Acceptance/Rejection
@@ -458,6 +462,7 @@ export class DisputeService {
 
   private async processAIDispute(jobId: number) {
     try {
+      console.log(`Running AI Analysis for Job ${jobId}...`);
       // Logic for AI analysis here
       const verdict = { percent: 60, reason: "Merged Backend AI Result" };
 
@@ -466,6 +471,7 @@ export class DisputeService {
        verdict.percent,
        verdict.reason
      );
+      console.log(`AI Verdict Submitted: ${tx.hash}`);
       await tx.wait();
 
       await prisma.job.update({
@@ -477,8 +483,9 @@ export class DisputeService {
           aiDeadline: new Date(Date.now() + 72 * 60 * 60 * 1000),
         },
       });
-    } catch (err) {
-      console.error("AI Submission Failed:", err);
+    } catch (err: any) {
+      console.error(`AI Submission Failed for Job ${jobId}. Possible Gas/Role Issue.`);
+      console.error(err.reason || err.message);
     }
   }
 }
