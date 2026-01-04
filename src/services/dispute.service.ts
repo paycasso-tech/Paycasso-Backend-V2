@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import { Wallet } from "@coinbase/coinbase-sdk";
 // PrismaClient import removed
 import DisputeArtifact from "../abis/TFADispute.json";
 import DAOVotingArtifact from "../abis/TFADAOVoting.json";
@@ -6,6 +7,198 @@ import DAOVotingArtifact from "../abis/TFADAOVoting.json";
 import { prisma } from "../db";
 
 export class DisputeService {
+  /**
+   * Cast a vote on behalf of a user (Voter)
+   * Uses Coinbase CDP Wallet
+   */
+  async castVote(voterWalletId: string, jobId: number, contractorPercent: number) {
+    try {
+      console.log(`Casting vote for Job ${jobId} by wallet ${voterWalletId}`);
+      
+      // 1. Fetch User's Wallet
+      const wallet = await Wallet.fetch(voterWalletId);
+      
+      // 2. Function Args
+      const args = {
+        _jobId: jobId.toString(),
+        _contractorPercent: contractorPercent.toString()
+      };
+
+      console.log("Invoking contract with args:", args);
+
+      // 3. Submit Transaction
+      const invocation = await wallet.invokeContract({
+        contractAddress: process.env.TFA_DAO_VOTING_ADDRESS!,
+        method: "castVote",
+        args: args,
+        abi: DAOVotingArtifact.abi as any 
+      });
+
+      console.log("Vote transaction submitted. Waiting for confirmation...");
+      const tx = await invocation.wait();
+      
+      console.log(`Vote confirmed: ${tx.getTransactionHash()}`);
+      return tx.getTransactionHash();
+
+    } catch (error) {
+      console.error("Failed to cast vote:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new Job (User Action)
+   */
+  async createJob(clientWalletId: string, contractorAddress: string, amountUSDC: number) {
+      try {
+          console.log(`Creating Job: Client ${clientWalletId} -> Contractor ${contractorAddress} ($${amountUSDC})`);
+          
+          const wallet = await Wallet.fetch(clientWalletId);
+          const amountWei = ethers.parseUnits(amountUSDC.toString(), 6).toString(); // USDC has 6 decimals
+
+          const usdcAddress = process.env.APP_ENV === "production" 
+              ? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" 
+              : "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+
+          const erc20Abi = [
+            {
+              "constant": false,
+              "inputs": [
+                {"name": "_spender","type": "address"},
+                {"name": "_value","type": "uint256"}
+              ],
+              "name": "approve",
+              "outputs": [{"name": "","type": "bool"}],
+              "type": "function"
+            }
+          ];
+
+          // 1. Approve USDC
+          console.log("Approving USDC spending...");
+          const approval = await wallet.invokeContract({
+              contractAddress: usdcAddress,
+              method: "approve",
+              args: {
+                  _spender: process.env.TFA_DISPUTE_ADDRESS!,
+                  _value: amountWei
+              },
+              abi: erc20Abi as any
+          });
+          await approval.wait();
+          console.log("USDC Approved.");
+
+          // 2. Create Job
+          console.log("Calling createJob...");
+          const invocation = await wallet.invokeContract({
+              contractAddress: process.env.TFA_DISPUTE_ADDRESS!,
+              method: "createJob",
+              args: {
+                  _contractor: contractorAddress,
+                  _amount: amountWei
+              },
+              abi: DisputeArtifact.abi as any
+          });
+          const tx = await invocation.wait();
+          return tx.getTransactionHash();
+
+      } catch (error) {
+          console.error("Failed to create job:", error);
+          throw error;
+      }
+  }
+
+  /**
+   * Release Funds to Contractor (User Action - Client)
+   */
+  async releaseFunds(clientWalletId: string, jobId: number) {
+      try {
+          console.log(`Releasing funds for Job ${jobId}`);
+          const wallet = await Wallet.fetch(clientWalletId);
+          
+          const invocation = await wallet.invokeContract({
+              contractAddress: process.env.TFA_DISPUTE_ADDRESS!,
+              method: "releaseToContractor",
+              args: { _jobId: jobId.toString() },
+              abi: DisputeArtifact.abi as any
+          });
+
+          const tx = await invocation.wait();
+          return tx.getTransactionHash();
+      } catch (error) {
+          console.error("Failed to release funds:", error);
+          throw error;
+      }
+  }
+
+  /**
+   * Raise Dispute (User Action)
+   */
+  async raiseDispute(userWalletId: string, jobId: number) {
+      try {
+          console.log(`Raising dispute for Job ${jobId}`);
+          const wallet = await Wallet.fetch(userWalletId);
+          
+          const invocation = await wallet.invokeContract({
+              contractAddress: process.env.TFA_DISPUTE_ADDRESS!,
+              method: "raiseDispute",
+              args: { _jobId: jobId.toString() },
+              abi: DisputeArtifact.abi as any
+          });
+
+          const tx = await invocation.wait();
+          return tx.getTransactionHash();
+      } catch (error) {
+          console.error("Failed to raise dispute:", error);
+          throw error;
+      }
+  }
+
+  /**
+   * Accept AI Verdict (User Action)
+   */
+  async acceptVerdict(userWalletId: string, jobId: number) {
+      try {
+          console.log(`Accepting AI verdict for Job ${jobId}`);
+          const wallet = await Wallet.fetch(userWalletId);
+          
+          const invocation = await wallet.invokeContract({
+              contractAddress: process.env.TFA_DISPUTE_ADDRESS!,
+              method: "acceptAIVerdict",
+              args: { _jobId: jobId.toString() },
+              abi: DisputeArtifact.abi as any
+          });
+
+          const tx = await invocation.wait();
+          return tx.getTransactionHash();
+      } catch (error) {
+          console.error("Failed to accept verdict:", error);
+          throw error;
+      }
+  }
+
+  /**
+   * Reject AI Verdict (User Action)
+   */
+  async rejectVerdict(userWalletId: string, jobId: number) {
+      try {
+          console.log(`Rejecting AI verdict for Job ${jobId}`);
+          const wallet = await Wallet.fetch(userWalletId);
+          
+          const invocation = await wallet.invokeContract({
+              contractAddress: process.env.TFA_DISPUTE_ADDRESS!,
+              method: "rejectAIVerdict",
+              args: { _jobId: jobId.toString() },
+              abi: DisputeArtifact.abi as any
+          });
+
+          const tx = await invocation.wait();
+          return tx.getTransactionHash();
+      } catch (error) {
+          console.error("Failed to reject verdict:", error);
+          throw error;
+      }
+  }
+
   /**
    * Manually start voting session (DAO Escalation)
    * Only callable if the sender has the right role or if logic permits public calling

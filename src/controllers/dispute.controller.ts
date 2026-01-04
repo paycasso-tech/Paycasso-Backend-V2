@@ -133,11 +133,188 @@ export const setMinVoters = async (req: Request, res: Response) => {
   }
 };
 
+
 export const setFeePercentage = async (req: Request, res: Response) => {
   const { fee } = req.body;
   if (fee === undefined) return res.status(400).json({ error: "fee is required" });
   try {
     const txHash = await disputeService.setFeePercentage(parseInt(fee));
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+export const voteOnDispute = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { userId, contractorPercent } = req.body;
+
+  if (!id || !userId || contractorPercent === undefined) {
+    return res.status(400).json({ error: "Missing required fields: id, userId, contractorPercent" });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { wallet: true },
+    });
+
+    if (!user || !user.wallet || !user.wallet.coinbaseWalletId) {
+       return res.status(404).json({ error: "User or Coinbase wallet not found" });
+    }
+
+    const txHash = await disputeService.castVote(
+      user.wallet.coinbaseWalletId,
+      parseInt(id),
+      parseInt(contractorPercent)
+    );
+
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const createJobController = async (req: Request, res: Response) => {
+  const { userId, contractorAddress, amount } = req.body;
+
+  if (!userId || !contractorAddress || !amount) {
+    return res.status(400).json({ error: "Missing required fields: userId, contractorAddress, amount" });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { wallet: true },
+    });
+
+    if (!user || !user.wallet || !user.wallet.coinbaseWalletId) {
+       return res.status(404).json({ error: "User or Coinbase wallet not found" });
+    }
+
+    const txHash = await disputeService.createJob(
+      user.wallet.coinbaseWalletId,
+      contractorAddress,
+      parseFloat(amount)
+    );
+
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const releaseFundsController = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+
+  if (!id || !userId) {
+    return res.status(400).json({ error: "Missing required fields: id, userId" });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { wallet: true },
+    });
+
+    if (!user || !user.wallet || !user.wallet.coinbaseWalletId) {
+       return res.status(404).json({ error: "User or Coinbase wallet not found" });
+    }
+
+    const txHash = await disputeService.releaseFunds(
+      user.wallet.coinbaseWalletId,
+      parseInt(id)
+    );
+
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const raiseDisputeController = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+
+  if (!id || !userId) {
+    return res.status(400).json({ error: "Missing required fields: id, userId" });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { wallet: true },
+    });
+
+    if (!user || !user.wallet || !user.wallet.coinbaseWalletId) {
+       return res.status(404).json({ error: "User or Coinbase wallet not found" });
+    }
+
+    const txHash = await disputeService.raiseDispute(
+      user.wallet.coinbaseWalletId,
+      parseInt(id)
+    );
+
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const acceptVerdictController = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+
+  if (!id || !userId) {
+    return res.status(400).json({ error: "Missing required fields: id, userId" });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { wallet: true },
+    });
+
+    if (!user || !user.wallet || !user.wallet.coinbaseWalletId) {
+       return res.status(404).json({ error: "User or Coinbase wallet not found" });
+    }
+
+    const txHash = await disputeService.acceptVerdict(
+      user.wallet.coinbaseWalletId,
+      parseInt(id)
+    );
+
+    res.json({ success: true, txHash });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const rejectVerdictController = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+
+  if (!id || !userId) {
+    return res.status(400).json({ error: "Missing required fields: id, userId" });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { wallet: true },
+    });
+
+    if (!user || !user.wallet || !user.wallet.coinbaseWalletId) {
+       return res.status(404).json({ error: "User or Coinbase wallet not found" });
+    }
+
+    const txHash = await disputeService.rejectVerdict(
+      user.wallet.coinbaseWalletId,
+      parseInt(id)
+    );
+
     res.json({ success: true, txHash });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
