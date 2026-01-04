@@ -22,7 +22,7 @@ export const getUserWallet = async (req: Request, res: Response) => {
         const authToken = token!;
 
         // Find existing user by email
-        let dbUser: any = await prisma.user.findUnique({
+        let dbUser = await prisma.user.findUnique({
             where: { email: userEmail },
             include: { wallet: { include: { rewards: true } }, faucet: true }
         });
@@ -37,7 +37,7 @@ export const getUserWallet = async (req: Request, res: Response) => {
 
             dbUser = await prisma.user.create({
                 // Cast to any until Prisma client is regenerated with new schema
-                data: ({
+                data: {
                     userId: authToken, // using auth token as a stable identifier
                     name,
                     email: userEmail,
@@ -50,7 +50,7 @@ export const getUserWallet = async (req: Request, res: Response) => {
                         },
                     },
                     faucet: { create: {} },
-                } as any),
+                },
                 include: { wallet: { include: { rewards: true } }, faucet: true }
             });
         }
@@ -91,14 +91,20 @@ export const getUserWallet = async (req: Request, res: Response) => {
                         : Coinbase.networks.BaseSepolia,
                     dbUser.wallet.address as string
                 );
-                const usdcBalance = (await address.getBalance(Coinbase.assets.Usdc)).toNumber();
+                const usdcBalance = await address.getBalance(Coinbase.assets.Usdc);
 
                 const apyRate = 3; // 3% APY
                 const currentDate = new Date();
                 const lastUpdated = dbUser.wallet.rewards?.lastUpdated || new Date();
                 const timeDifference = currentDate.getTime() - new Date(lastUpdated).getTime();
                 const daysSinceLastUpdate = timeDifference / (1000 * 60 * 60 * 24);
-                const rewardEarned = (usdcBalance * apyRate * daysSinceLastUpdate) / (100 * 365);
+                
+                // Use Decimal math for precision
+                const rewardEarned = usdcBalance
+                    .mul(apyRate)
+                    .mul(daysSinceLastUpdate)
+                    .div(100 * 365)
+                    .toNumber();
 
                 if (dbUser.wallet.rewards) {
                     await prisma.rewards.update({
@@ -122,7 +128,7 @@ export const getUserWallet = async (req: Request, res: Response) => {
 
                 return res.json({
                     ...dbUser,
-                    wallet: dbUser.wallet ? { ...dbUser.wallet, usdcBalance } : null,
+                    wallet: dbUser.wallet ? { ...dbUser.wallet, usdcBalance: usdcBalance.toNumber() } : null,
                 });
             } catch (err) {
                 console.error(`[api/wallet/user] Failed to fetch balance | User: ${dbUser?.userId}`);
@@ -153,11 +159,11 @@ export const registerUser = async (req: Request, res: Response) => {
 
         const passwordHash = await bcrypt.hash(passwordInput, 10);
         const token = randomBytes(24).toString("hex");
-        const name = emailInput.split("@")[0];
+        const name = emailInput.split("@")[0] ?? "User";
 
         const created = await prisma.user.create({
             // Cast to any until Prisma client is regenerated with new schema
-            data: ({
+            data: {
                 userId: token,
                 name,
                 email: emailInput!,
@@ -170,7 +176,7 @@ export const registerUser = async (req: Request, res: Response) => {
                     },
                 },
                 faucet: { create: {} },
-            } as any),
+            },
             include: { wallet: { include: { rewards: true } }, faucet: true },
         });
 

@@ -15,7 +15,7 @@ const initServices = async () => {
     await setupFaucet(); // From your V2 repo
 
     const disputeService = new DisputeService();
-    disputeService.startListeners(); // Merged from DAO repo
+
 
     console.log(" All Services Initialized");
   } catch (error) {
