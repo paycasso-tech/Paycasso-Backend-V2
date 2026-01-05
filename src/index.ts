@@ -9,6 +9,7 @@ import { transferRoutes, disputeRoutes } from "./routes";
 import { DisputeService } from "./services/dispute.service";
 import { setupFaucet } from "./services/coinbase.service/coinbase.services";
 import { swaggerSpec } from "./configs/swagger.config";
+import walletRoutes from "./routes/wallet.routes";
 
 dotenv.config();
 
@@ -37,20 +38,36 @@ app.get("/api-docs.json", (req, res) => {
 
 const initServices = async () => {
   try {
-    await setupFaucet();
+    // Setup faucet (non-critical, continue if it fails)
+    try {
+      await setupFaucet();
+      console.log("✅ Faucet initialized");
+    } catch (faucetError) {
+      const errorMessage = faucetError instanceof Error ? faucetError.message : String(faucetError);
+      console.warn(
+        "⚠️  Faucet setup failed (non-critical):",
+        errorMessage
+      );
+      console.log("→  Faucet features will be unavailable");
+    }
+
+    // Setup dispute service
     const disputeService = new DisputeService();
     disputeService.startListeners();
-    console.log("✅ All Services Initialized");
+
+    console.log("✅ All Core Services Initialized");
   } catch (error) {
-    console.error("❌ Service Initialization Failed", error);
+    console.error("❌ Critical Service Initialization Failed", error);
   }
 };
+
 
 initServices();
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/wallet", walletRoutes);
 app.use("/api/transfer", transferRoutes);
 app.use("/api/dispute", disputeRoutes);
 
