@@ -21,7 +21,8 @@ export const getJobDetails = async (req: Request, res: Response) => {
 };
 
 export const addEvidence = async (req: Request, res: Response) => {
-  const { jobId } = req.params;
+  const { id } = req.params;
+  const jobId = id;
   if (!jobId) return res.status(400).json({ error: "Job ID is required" });
   const { sender, message, fileUrl } = req.body;
 

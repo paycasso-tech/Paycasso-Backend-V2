@@ -1,0 +1,425 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Paycasso Backend API",
+    "version": "1.0.0",
+    "description": "API documentation for the Paycasso Backend V2"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001",
+      "description": "Local server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/api/user/getWallet": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get User Wallet and Faucet Info",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "email",
+            "schema": { "type": "string" },
+            "description": "User email (optional if passed via header or verified token)"
+          }
+        ],
+        "responses": {
+          "200": { "description": "User wallet info" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/user/register": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Register a new user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User registered successfully" },
+          "409": { "description": "User already exists" }
+        }
+      }
+    },
+    "/api/user/login": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Login user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/api/transfer/getTransfers": {
+      "get": {
+        "tags": ["Transfer"],
+        "summary": "Get list of transfers",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of transfers" }
+        }
+      }
+    },
+    "/api/transfer/createTransfer": {
+      "post": {
+        "tags": ["Transfer"],
+        "summary": "Create a new transfer",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "asset": { "type": "string", "default": "usdc" },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "recipient": { "type": "string" },
+                      "amount": { "type": "number" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Transfer successful" }
+        }
+      }
+    },
+    "/api/dispute/create": {
+      "post": {
+        "tags": ["Dispute"],
+        "summary": "Create a new job/dispute contract",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                   "userId": { "type": "string" },
+                   "contractorAddress": { "type": "string" },
+                   "amount": { "type": "string" }
+                },
+                "required": ["userId", "contractorAddress", "amount"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Job created" } }
+      }
+    },
+    "/api/dispute/{id}": {
+      "get": {
+        "tags": ["Dispute"],
+        "summary": "Get job details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Job details" } }
+      }
+    },
+    "/api/dispute/{id}/evidence": {
+      "post": {
+        "tags": ["Dispute"],
+        "summary": "Add evidence to a dispute",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sender": { "type": "string" },
+                  "message": { "type": "string" },
+                  "fileUrl": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Evidence added" } }
+      }
+    },
+    "/api/dispute/{id}/escalate": {
+      "post": {
+        "tags": ["Dispute"],
+        "summary": "Escalate dispute to DAO",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "durationSeconds": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Escalated to DAO" } }
+      }
+    },
+    "/api/dispute/{id}/vote": {
+      "post": {
+        "tags": ["Dispute"],
+        "summary": "Vote on a dispute",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                   "userId": { "type": "string" },
+                   "contractorPercent": { "type": "number" }
+                },
+                "required": ["userId", "contractorPercent"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Vote cast" } }
+      }
+    },
+    "/api/dispute/{id}/release": {
+       "post": {
+        "tags": ["Dispute"],
+        "summary": "Release funds (Contractor wins or job done)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "userId": { "type": "string" } },
+                "required": ["userId"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Funds released" } }
+       }
+    },
+    "/api/dispute/{id}/raise": {
+       "post": {
+        "tags": ["Dispute"],
+        "summary": "Raise a dispute (Client)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "userId": { "type": "string" } },
+                "required": ["userId"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Dispute raised" } }
+       }
+    },
+    "/api/dispute/{id}/accept": {
+       "post": {
+        "tags": ["Dispute"],
+        "summary": "Accept verdict",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "userId": { "type": "string" } },
+                "required": ["userId"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Verdict accepted" } }
+       }
+    },
+    "/api/dispute/{id}/check-deadline": {
+      "post": {
+        "tags": ["Dispute"],
+        "summary": "Check AI deadline (Trigger Escalation)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Deadline checked" } }
+      }
+    },
+    "/api/dispute/{id}/finalize": {
+      "post": {
+        "tags": ["Dispute"],
+        "summary": "Finalize voting session",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Voting finalized" } }
+      }
+    },
+    "/api/dispute/voters/register": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Register a voter (Admin only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "voterAddress": { "type": "string" } },
+                "required": ["voterAddress"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Voter registered" } }
+      }
+    },
+    "/api/dispute/voters/remove": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Remove a voter (Admin only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "voterAddress": { "type": "string" } },
+                "required": ["voterAddress"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Voter removed" } }
+      }
+    },
+    "/api/dispute/voters/ban": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Ban a voter (Admin only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "voterAddress": { "type": "string" } },
+                "required": ["voterAddress"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Voter banned" } }
+      }
+    },
+    "/api/dispute/config/duration": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Set voting duration (Admin only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "duration": { "type": "number", "description": "Duration in seconds" } },
+                "required": ["duration"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Duration set" } }
+      }
+    },
+    "/api/dispute/config/min-voters": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Set minimum voters required (Admin only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "count": { "type": "number" } },
+                "required": ["count"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Min voters set" } }
+      }
+    },
+    "/api/dispute/config/fee": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Set fee percentage (Admin only)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "fee": { "type": "number" } },
+                "required": ["fee"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Fee set" } }
+      }
+    },
+    "/api/dispute/{id}/reject": {
+       "post": {
+        "tags": ["Dispute"],
+        "summary": "Reject verdict",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "userId": { "type": "string" } },
+                "required": ["userId"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Verdict rejected" } }
+       }
+    }
+  }
+}
