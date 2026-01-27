@@ -93,6 +93,15 @@
         "tags": ["Transfer"],
         "summary": "Get list of transfers",
         "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "email",
+            "schema": { "type": "string" },
+            "required": true,
+            "description": "User email (required to identify the wallet owner)"
+          }
+        ],
         "responses": {
           "200": { "description": "List of transfers" }
         }
